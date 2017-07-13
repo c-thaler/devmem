@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <errno.h>
 
 
 void print_help(char* name) {
@@ -19,9 +22,11 @@ int main(int argc, char **argv) {
 	int i;
 	char* length = NULL;
 	char* address = NULL;
-	char* access = NULL;
 	char* value = NULL;
 	unsigned long len = 4;
+	off_t addr;
+	bool write = false;
+	uint32_t val;
 
 
 	/* handling the length option */
@@ -44,7 +49,7 @@ int main(int argc, char **argv) {
 
 	/* handling the non-option parameters */
 	if(optind < argc) {
-		address = optind++;
+		address = argv[optind++];
 	}
 	else {
 		fprintf(stderr, "%s: Address argument is required.\n", argv[0]);
@@ -52,11 +57,7 @@ int main(int argc, char **argv) {
 	}
 
 	if(optind < argc) {
-		access = optind++;
-	}
-
-	if(optind < argc) {
-		value = optind++;
+		value = argv[optind++];
 	}
 
 	if(optind < argc) {
@@ -64,15 +65,31 @@ int main(int argc, char **argv) {
 		goto fail;
 	}
 
-
 	/* parsing the parameters */
 	if(length) {
 		len = strtoul(length, NULL, 10);
-		if(!len)
+		if(!len) {
 			fprintf(stderr, "length must be a value > 0\n");
+			goto fail;
+		}
 	}
 
 	printf("Reading %lu bytes\n", len);
+
+	if(address) {
+		addr = strtoul(address, NULL, 16);
+//		if(!addr) {
+//			fprintf(stderr, "invalid address\n");
+//			goto fail;
+//		}
+	}
+
+	printf("Reading from address=0x%08lx (errno=%d)\n", addr, errno);
+
+	if(value) {
+		write = true;
+		val = strtoul(value, NULL, 16);
+	}
 
 	return 0;
 
