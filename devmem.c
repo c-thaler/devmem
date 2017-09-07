@@ -16,7 +16,8 @@ union memptr_t {
 
 
 void print_help(char* name) {
-	fprintf(stderr, "\nUsage:\t%s { [-l length] address | address data }\n"
+	fprintf(stderr, "\nUsage:\t%s { [-B -l length] address | address data }\n"
+					"\t-B      : enable binary data output (e.g. for dumping memory to file)\n"
 					"\tlength  : length of data in bytes to act upon, starting at address\n"
 					"\taddress : memory address to act upon\n"
 					"\tdata    : data word to be written\n\n",
@@ -64,15 +65,19 @@ int main(int argc, char **argv) {
 	size_t len = 4;
 	off_t addr;
 	bool write = false;
+	bool binary = false;
 	uint32_t val;
 	void *map;
 
 
 	/* handling the length option */
-	while ((c = getopt (argc, argv, "l:")) != -1) {
+	while ((c = getopt (argc, argv, "Bl:")) != -1) {
 		switch(c) {
 			case 'l':
 				length = optarg;
+				break;
+			case 'B':
+				binary = true;
 				break;
 			case '?':
 				if(optopt == 'l') {
@@ -122,8 +127,6 @@ int main(int argc, char **argv) {
 //			goto fail;
 //		}
 	}
-
-	printf("Reading from address=0x%08lx (errno=%d)\n", addr, errno);
 
 	if(value) {
 		write = true;
