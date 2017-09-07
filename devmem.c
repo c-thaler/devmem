@@ -5,6 +5,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+
+
+union memptr_t {
+	void *any;
+	uint32_t *u32;
+};
 
 
 void print_help(char* name) {
@@ -16,6 +24,36 @@ void print_help(char* name) {
 }
 
 
+void* map_memory(off_t addr, size_t len) {
+
+	int fd;
+	void *mem;
+
+	fd = open("/dev/mem", O_RDWR);
+	if(fd < 0) {
+		fprintf(stderr, "Failed to open /dev/mem : %s\n", strerror(errno));
+		return NULL;
+	}
+
+	mem = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, addr);
+	if(mem == MAP_FAILED) {
+		fprintf(stderr, "Failed to mmap memory at 0x%08lx : %s\n", addr, strerror(errno));
+		return NULL;
+	}
+
+	return mem;
+}
+
+
+void print_mem(void *mem, size_t len) {
+	len = len / 4;
+
+	for(size_t i = 0; i < len, ++i) {
+
+	}
+}
+
+
 int main(int argc, char **argv) {
 	int err = 1;
 	int c;
@@ -23,10 +61,11 @@ int main(int argc, char **argv) {
 	char* length = NULL;
 	char* address = NULL;
 	char* value = NULL;
-	unsigned long len = 4;
+	size_t len = 4;
 	off_t addr;
 	bool write = false;
 	uint32_t val;
+	void *map;
 
 
 	/* handling the length option */
@@ -89,6 +128,14 @@ int main(int argc, char **argv) {
 	if(value) {
 		write = true;
 		val = strtoul(value, NULL, 16);
+	}
+
+	map = map_memory(addr, len);
+
+	{
+		union memptr_t m;
+		m.any = map;
+		printf("%p : %x\n", m.any, *m.u32);
 	}
 
 	return 0;
