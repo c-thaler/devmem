@@ -49,7 +49,7 @@ void* map_memory(off_t addr, size_t len) {
 void print_mem(void *mem, size_t len) {
 	len = len / 4;
 
-	for(size_t i = 0; i < len, ++i) {
+	for(size_t i = 0; i < len; ++i) {
 
 	}
 }
@@ -122,10 +122,10 @@ int main(int argc, char **argv) {
 
 	if(address) {
 		addr = strtoul(address, NULL, 16);
-//		if(!addr) {
-//			fprintf(stderr, "invalid address\n");
-//			goto fail;
-//		}
+		if(!addr) {
+			fprintf(stderr, "invalid address\n");
+			goto fail;
+		}
 	}
 
 	if(value) {
@@ -134,6 +134,10 @@ int main(int argc, char **argv) {
 	}
 
 	map = map_memory(addr, len);
+	if(!map) {
+		fprintf(stderr, "error mapping address\n");
+		goto fail;
+	}
 
 	{
 		union memptr_t m;
