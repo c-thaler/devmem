@@ -49,7 +49,7 @@ void* map_memory(off_t addr, size_t len) {
 void print_mem(void *mem, size_t len) {
 	len = len / 4;
 
-	for(size_t i = 0; i < len, ++i) {
+	for(size_t i = 0; i < len; ++i) {
 
 	}
 }
