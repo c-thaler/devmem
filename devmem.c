@@ -46,12 +46,26 @@ void* map_memory(off_t addr, size_t len) {
 }
 
 
-void print_mem(void *mem, size_t len) {
+void print_mem(union memptr_t mem, size_t len) {
+	const int words = 4;
 	len = len / 4;
 
 	for(size_t i = 0; i < len; ++i) {
-
+		switch(i & (words - 1)) {
+		case 0:
+			printf("%p: %x", mem.any, *mem.u32);
+			break;
+		case 3:
+			printf(" %x\n", *mem.u32);
+			break;
+		default:
+			printf(" %x", *mem.u32);
+			
+		}
 	}
+
+	if(len & (words - 1))
+		printf("\n");
 }
 
 
@@ -64,6 +78,8 @@ int main(int argc, char **argv) {
 	char* value = NULL;
 	size_t len = 4;
 	off_t addr;
+	off_t off;
+	int pagesize = getpagesize();
 	bool write = false;
 	bool binary = false;
 	uint32_t val;
@@ -133,7 +149,8 @@ int main(int argc, char **argv) {
 		val = strtoul(value, NULL, 16);
 	}
 
-	map = map_memory(addr, len);
+	off = addr & (pagesize - 1);
+	map = map_memory(addr & ~(pagesize - 1), len + off);
 	if(!map) {
 		fprintf(stderr, "error mapping address\n");
 		goto fail;
@@ -142,7 +159,7 @@ int main(int argc, char **argv) {
 	{
 		union memptr_t m;
 		m.any = map;
-		printf("%p : %x\n", m.any, *m.u32);
+		print_mem(m, len);
 	}
 
 	return 0;
