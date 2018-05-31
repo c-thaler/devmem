@@ -60,7 +60,6 @@ void print_mem(union memptr_t mem, size_t len) {
 			break;
 		default:
 			printf(" %x", *mem.u32);
-			
 		}
 	}
 
