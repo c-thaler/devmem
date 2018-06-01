@@ -67,6 +67,20 @@ void print_mem(union memptr_t mem, size_t len) {
 		printf("\n");
 }
 
+int write_mem(union memptr_t mem, size_t len, const char* fname) {
+	FILE *fd;
+	
+	fd = fopen(fname, "w"); 
+	if(!fd) {
+		return -1;
+	}
+
+	fwrite(mem.any, len, 1, fd);
+	
+	fclose(fd);
+
+	return 0;
+}
 
 int main(int argc, char **argv) {
 	int err = 1;
@@ -80,19 +94,18 @@ int main(int argc, char **argv) {
 	off_t off;
 	int pagesize = getpagesize();
 	bool write = false;
-	bool binary = false;
+	char *fname = NULL;
 	uint32_t val;
-	void *map;
-
+	union memptr_t map;
 
 	/* handling the length option */
-	while ((c = getopt (argc, argv, "Bl:")) != -1) {
+	while ((c = getopt (argc, argv, "B:l:")) != -1) {
 		switch(c) {
 			case 'l':
 				length = optarg;
 				break;
 			case 'B':
-				binary = true;
+				fname = optarg;
 				break;
 			case '?':
 				if(optopt == 'l') {
@@ -104,7 +117,6 @@ int main(int argc, char **argv) {
 				abort();
 		}
 	}
-
 
 	/* handling the non-option parameters */
 	if(optind < argc) {
@@ -133,8 +145,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	printf("Reading %lu bytes\n", len);
-
 	if(address) {
 		addr = strtoul(address, NULL, 16);
 		if(!addr) {
@@ -149,16 +159,23 @@ int main(int argc, char **argv) {
 	}
 
 	off = addr & (pagesize - 1);
-	map = map_memory(addr & ~(pagesize - 1), len + off);
-	if(!map) {
+	map.any = map_memory(addr & ~(pagesize - 1), len + off);
+	if(!map.any) {
 		fprintf(stderr, "error mapping address\n");
 		goto fail;
 	}
 
-	{
-		union memptr_t m;
-		m.any = map;
-		print_mem(m, len);
+	if(fname) {
+		printf("Writing %zu bytes from %jx to %s...\n", len, (intmax_t) addr, fname);
+
+		err = write_mem(map, len, fname);
+		if(err) {
+			fprintf(stderr, "Unable to open file.\n");
+			goto fail;
+		}
+	}
+	else {
+		print_mem(map, len);
 	}
 
 	return 0;
