@@ -46,26 +46,27 @@ void* map_memory(off_t addr, size_t len) {
 }
 
 
-void print_mem(union memptr_t mem, size_t len) {
+void print_mem(union memptr_t mem, size_t len, off_t paddr) {
 	const int words = 4;
 	len = len / 4;
 
 	for(size_t i = 0; i < len; ++i) {
 		switch(i & (words - 1)) {
 		case 0:
-			printf("%p: %x", mem.any, *mem.u32);
+			printf("0x%08jx: %08x", paddr + words * i, mem.u32[i]);
 			break;
 		case 3:
-			printf(" %x\n", *mem.u32);
+			printf(" %08x\n", mem.u32[i]);
 			break;
 		default:
-			printf(" %x", *mem.u32);
+			printf(" %08x", mem.u32[i]);
 		}
 	}
 
 	if(len & (words - 1))
 		printf("\n");
 }
+
 
 int write_mem(union memptr_t mem, size_t len, const char* fname) {
 	FILE *fd;
@@ -82,10 +83,10 @@ int write_mem(union memptr_t mem, size_t len, const char* fname) {
 	return 0;
 }
 
+
 int main(int argc, char **argv) {
 	int err = 1;
 	int c;
-	int i;
 	char* length = NULL;
 	char* address = NULL;
 	char* value = NULL;
@@ -165,8 +166,13 @@ int main(int argc, char **argv) {
 		goto fail;
 	}
 
+	if(write) {
+		printf("Writing 0x%x to 0x%jx\n", val, (intmax_t) addr);
+		*map.u32 = val;
+	}
+
 	if(fname) {
-		printf("Writing %zu bytes from %jx to %s...\n", len, (intmax_t) addr, fname);
+		printf("Writing %zu bytes from 0x%jx to %s...\n", len, (intmax_t) addr, fname);
 
 		err = write_mem(map, len, fname);
 		if(err) {
@@ -175,7 +181,9 @@ int main(int argc, char **argv) {
 		}
 	}
 	else {
-		print_mem(map, len);
+		if(write)
+			printf("Readback:\n");
+		print_mem(map, len, addr);
 	}
 
 	return 0;
