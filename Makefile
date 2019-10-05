@@ -1,7 +1,7 @@
 TARGET=devmem
 
 $(TARGET) : devmem.o
-	$(CC) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 .PHONY:
 all : $(TARGET)
